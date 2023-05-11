@@ -19,7 +19,7 @@ function viz_init(svec, mvec) {
         let axes_object, g3;
         s.preload = function() {
         //    tnr = s.loadFont('../lib/font/times.ttf');    // loads font (Times new roman)
-        axes_object = s.loadModel('http://localhost:8887/manim_js/Manim.js/lib/obj/axes.obj');
+        axes_object = s.loadModel('./manim_js/Manim.js/lib/obj/axes.obj');
         };
         s.setup = function () {
             // this sets frameRate to be 30, and creates a canvas of 1200 by 675 (you can adjust these in globals.js)
