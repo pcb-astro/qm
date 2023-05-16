@@ -32,5 +32,27 @@ body {
 }
 
 body {
-    margin-left: 20px;
+    /*margin-left: 20px;*/
+    display: flex;
+}
+
+#hist_vis {
+    margin-top: 20px;
+}
+
+#form_hist_container_div {
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+}
+
+#exp_div {
+    display: flex;
+    flex-direction: row;
+}
+
+#expected_value {
+    display: flex;
+    flex-direction: column;
+    margin-top: 25px;
 }

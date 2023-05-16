@@ -145,11 +145,13 @@ function calculate_result() {
 
 function start_experiment() {
   
-  update_measurement(null, null);
-  update_state(state_vec, null);
+  //update_measurement(null, null);
+  //update_state(state_vec, null);
 
 	var measure_vec = get_measure_vec();
   var start_vec = state_vec;
+  //align_measurement();
+
   var n_times = parseInt(document.getElementById("n_times_text").value);
   
   measure_counts = {};
@@ -157,20 +159,25 @@ function start_experiment() {
   	measure_counts[state] = 0;
   }
   
-  generate_vis(measure_counts, start_vec, measure_vec, n_times);
+  generate_vis(measure_counts, measure_vec, start_vec, n_times);
   
 }
 
-function run_experiment(measure_counts, measure_vec, start_vec, n_times, res) {
+function run_experiment(measure_counts, measure_vec, start_vec, n_times, res, n_tot) {
 	//console.log("Running Experiment " + n_times + " times");
 
   if (n_times > 0) {
     var measurement_idx = measure(start_vec, measure_vec);
     var measurement_state = states[measurement_idx];
     measure_counts[measurement_state] += 1;
-    setTimeout(function() { update_vis(measure_counts, measure_vec, start_vec, n_times, res)}, 1);
+    setTimeout(function() { update_vis(measure_counts, measure_vec, start_vec, n_times, res, measurement_idx, n_tot)}, 100);
+    document.getElementById("sim_value").innerHTML = (n_tot - n_times + 1) + "/" + n_tot;
+    
   }
-  
+  else {
+    update_state(start_vec, null);
+    update_measurement(null, measure_vec);
+  }
   var count_arr = [];
   var total_times = 0;
   for (const st of states) {
@@ -184,14 +191,21 @@ function run_experiment(measure_counts, measure_vec, start_vec, n_times, res) {
   
   //console.log(state_values);
   //console.log(count_arr);
+  document.getElementById("theory_value").innerHTML = tf.dot(start_vec, measure_vec).dataSync()[0].toFixed(4);
+  document.getElementById("exp_value").innerHTML = tf.dot(tf.tensor(state_values), tf.tensor(count_arr)).dataSync()[0].toFixed(4);
+  //document.getElementById("expected_value").innerHTML = "Theoretical Expected Value = " +  + " Experiment average = " + 
   
-  document.getElementById("expected_value").innerHTML = "Theoretical Expected Value = " + tf.dot(start_vec, measure_vec).dataSync()[0] + " Experiment average = " + 
-  tf.dot(tf.tensor(state_values), tf.tensor(count_arr)).dataSync()[0];
 
 }
 
-function update_vis(measure_counts, measure_vec, start_vec, n_times, res) {
+function update_vis(measure_counts, measure_vec, start_vec, n_times, res, measurement_idx, total_times) {
 	//console.log("Updating vis " + JSON.stringify(measure_counts));
+  
+  var measurement_state_int = state_values[measurement_idx];
+  var display_state_vec = tf.mul(measure_vec, measurement_state_int);
+  update_state(display_state_vec, measurement_idx);
+  update_measurement(measurement_idx, measure_vec);
+  update_anim(display_state_vec.arraySync(), measure_vec.arraySync());
   
 	var values = [];
   for(const [state, count] of Object.entries(measure_counts)) {
@@ -205,7 +219,7 @@ function update_vis(measure_counts, measure_vec, start_vec, n_times, res) {
   
   res.view.change('hist', change_set).run()
   
-  run_experiment(measure_counts, measure_vec, start_vec, n_times - 1, res);
+  run_experiment(measure_counts, measure_vec, start_vec, n_times - 1, res, total_times);
 }
 
 function generate_vis(measure_counts, measure_vec, start_vec, n_times) {
@@ -216,6 +230,8 @@ function generate_vis(measure_counts, measure_vec, start_vec, n_times) {
   
 	var vis_spec = {
         $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        width: 200,
+        height: 200,
         description: 'Bar chart of measurement counts',
         data: {
           name: 'hist',
@@ -223,12 +239,21 @@ function generate_vis(measure_counts, measure_vec, start_vec, n_times) {
         },
         mark: 'bar',
         encoding: {
-          x: {field: 'state', type: 'ordinal'},
-          y: {field: 'count', type: 'quantitative', 'scale': {'domain': [0, n_times]}}
+          x: {
+            field: 'state', 
+            type: 'ordinal',
+            axis: {labelFontSize: 20, titleFontSize:25}
+          },
+          y: {
+            field: 'count', 
+            type: 'quantitative', 
+            scale: {domain: [0, n_times]},
+            axis: {labelFontSize: 20, titleFontSize:25}
+          }
         }
       };
       vegaEmbed('#hist_vis', vis_spec).then(function (res) {
-      	run_experiment(measure_counts, measure_vec, start_vec, n_times, res);
+      	run_experiment(measure_counts, measure_vec, start_vec, n_times, res, n_times);
       });
 }
 

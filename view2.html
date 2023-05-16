@@ -6,7 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/vega-embed@6/build/vega-embed.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
 <script src="https://unpkg.com/three@0.137.5/build/three.js"></script>
-<script src="https://raw.githubusercontent.com/mrdoob/three.js/master/examples/jsm/controls/TrackballControls.js"></script>
+<!--script src="https://raw.githubusercontent.com/mrdoob/three.js/master/examples/jsm/controls/TrackballControls.js"></script-->
 <!--script src="manim_js/Manim.js/lib/p5/p5.js"></script-->
 <script src="manim_js/Manim.js/lib/p5/p5.min.js"></script>
 <script src="manim_js/Manim.js/lib/p5/p5.dom.min.js"></script>
@@ -29,12 +29,14 @@
     <input type="number" id="alpha_text" class="number_box" value="0"/><br/>
     <span id="beta_label">Angle from Y-axis towards Z-axis (degrees)</span>
     <input type="number" id="beta_text" class="number_box" value="0"/><br/>
+    <span id="n_times_label">Number of simulations to run 
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+    <input type="text" id="n_times_text" class="number_box" value="100"/><br/>
+
     <button onclick="align_measurement()">Set Direction</button>
-    <button onclick="reset_direction()">Reset Direction</button><br/>
-    <button onclick="calculate_result()">Do Measurement</button>
-    <button onclick="reset_state()">Reset Measurement</button>
+    <button onclick="reset_direction()">Reset Direction</button>
+    <button onclick="start_experiment()">Run Experiment</button><br/>
 </form>
-<br/>
 <div id="result_div">
     <div id="result"></div>
     <div id="measure_vec_div" style="display:none">Measuring along direction: <span id="measure_vec"></span></div>
@@ -42,9 +44,41 @@
     <div id="state_div">
         Spin Alignment: <span id="state" style="display:none"></span> <span id="waiting">waiting for measurement</span> <span id="along">along the direction of measurement</span><span id="opposite">opposite to the direction of measurement</span> 
     </div>
-</div>
-<br/>
+    <div id="exp_div">
+        <div id="expected_value">
+            <div id="simulation_value">
+                Simulation #: <span id="sim_value"></span>
+            </div>
+            <div id="theoretical">
+                Theoretical Expected Value = <span id="theory_value"></span>
+            </div>
+            <div id="experimental">
+                Experimental Average = <span id="exp_value"></span>
+            </div>
+        </div>
+        <div id="hist_vis"></div>
     </div>
+    
+</div>
 
+</div>
+
+
+<br/>
+<div id="experiment_form">
+
+
+
+</div>
+</div>
+
+<div id="hamilton_exp">
+    <div id="sigma_z_exp"></div>
+    <div id="sigma_z_th"></div>
+    <div id="sigma_x_exp"></div>
+    <div id="sigma_y_exp"></div>
+    <div id="sigma_x2_plus_y2_exp"></div>
+    <div id="sigma_x2_plus_y2_th"></div>
+</div>
 </body>
 </html>
