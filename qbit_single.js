@@ -6,6 +6,7 @@ var state_vec = init_vec;
 
 var init_measure_vec = angle_to_unit_vec(0.0, 0.0);
 var measure_vec = init_measure_vec;
+var run_hamilton_exp = false;
 
 document.addEventListener("DOMContentLoaded", function(event) { 
   update_state(state_vec, null);
@@ -242,13 +243,13 @@ function generate_vis(measure_counts, measure_vec, start_vec, n_times) {
           x: {
             field: 'state', 
             type: 'ordinal',
-            axis: {labelFontSize: 20, titleFontSize:25}
+            axis: {labelFontSize: 20, titleFontSize: 25}
           },
           y: {
             field: 'count', 
             type: 'quantitative', 
             scale: {domain: [0, n_times]},
-            axis: {labelFontSize: 20, titleFontSize:25}
+            axis: {labelFontSize: 20, titleFontSize: 25}
           }
         }
       };
@@ -279,23 +280,117 @@ function run_hamilton() {
   
   console.log("Start value: " + sigma_x_0 + ", " + sigma_y_0 + ", " + sigma_z_0);
 
-  var dt = 0.01; //0.0001;
-  update_sigmas(sigma_x_0, sigma_y_0, sigma_x_0, sigma_y_0, sigma_z_0, dt, 0.0, meas_vec);
+  var dt = 0.05; //0.0001;
+  run_hamilton_exp = true;
+  update_sigmas(sigma_x_0, sigma_y_0, sigma_x_0, sigma_y_0, sigma_z_0, dt, 0.0, meas_vec, []);
 }
 
-function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec) {
-  document.getElementById("sigma_x_exp").innerHTML = "sigma_x (exp) = " + sigma_x;
-  document.getElementById("sigma_y_exp").innerHTML = "sigma_y (exp) = " + sigma_y;
-  document.getElementById("sigma_x2_plus_y2_exp").innerHTML = "sigma_x^2 + sigma_y^2 (exp) = " + (sigma_x*sigma_x + sigma_y*sigma_y);
-  document.getElementById("sigma_x2_plus_y2_th").innerHTML = "sigma_x^2 + sigma_y^2 (th) = " + (sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
+function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values) {
+  if (run_hamilton_exp) {
+    document.getElementById("sigma_x_exp_value").innerHTML = sigma_x.toFixed(4);
+    document.getElementById("sigma_y_exp_value").innerHTML = sigma_y.toFixed(4);
+    document.getElementById("sigma_x2_plus_y2_exp_value").innerHTML = (sigma_x*sigma_x + sigma_y*sigma_y).toFixed(4);
+    document.getElementById("sigma_x2_plus_y2_th_value").innerHTML = (sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0).toFixed(4);
 
-    var sigma_x_new = sigma_x, sigma_y_new = sigma_y; 
-    sigma_x_new -= sigma_y_new*dt;
-    sigma_y_new += sigma_x_new*dt;
+    
+    if (values.length > 300) {
+      values.shift();
+      values.shift();
+    }
+    
+    values.push(
+      {"time": t, "sigma_x,sigma_y": sigma_x, "type": "σx"},
+      {"time": t, "sigma_x,sigma_y": sigma_y, "type": "σy"},
+    );
+    
+    var t_start = 0;
+    var t_end = t + 1;
+    if (values.length > 250) {
+      t_start = t - 5;
+    }
 
-    //update_anim([sigma_x_new, sigma_y_new, sigma_z_0], meas_vec.arraySync());
-    update_anim2([sigma_x_new, sigma_y_new, sigma_z_0]);
+    var g1_spec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: 200,
+      height: 200,
+      description: 'Evolution of sigma_x and sigma_y',
+      layer:[
+        {
+          data: {
+            name: 'sx_sy',
+            values: values
+          },
+          mark: {
+            type: 'line',
+            clip: true
+           },
+           encoding: {
+             x: {
+               field: 'time', 
+               type: 'quantitative',
+               scale: {domain: [t_start, t_end]},
+               axis: {labelFontSize: 20, titleFontSize: 25, title: "time (seconds)"}
+             },
+             y: {
+               field: 'sigma_x,sigma_y', 
+               type: 'quantitative', 
+               scale: {domain: [-1, 1]},
+               axis: {labelFontSize: 20, titleFontSize: 25, title: "σx, σy", }
+             },
+             color: {
+               field: 'type',
+               type: 'nominal',
+               legend: {labelFontSize: 20, title:""}
+             }
+           }
+        },
+        {
+          data: {
+            name: 'sx_sy_point',
+            values: values.slice(-2),
+          },
+          mark: {
+            type: 'point',
+            filled: true,
+            size: 100
+           },
+           encoding: {
+             x: {
+               field: 'time', 
+               type: 'quantitative',
+               scale: {domain: [t_start, t_end]},
+               axis: {labelFontSize: 20, titleFontSize: 25}
+             },
+             y: {
+               field: 'sigma_x,sigma_y', 
+               type: 'quantitative', 
+               scale: {domain: [-1, 1]},
+               axis: {labelFontSize: 20, titleFontSize: 25}
+             },
+             color: {
+               field: 'type',
+               type: 'nominal',
+               legend: {labelFontSize: 20, title:""}
+             }
+           }
+        }
+      ]
+      
+    };
+    vegaEmbed('#g1_vis',g1_spec);
 
-    var new_t = t + dt;
-    setTimeout(function() { update_sigmas(sigma_x_new, sigma_y_new, sigma_x_0, sigma_y_0, sigma_z_0, dt, new_t, meas_vec)}, 0.01);
+      var sigma_x_new = sigma_x, sigma_y_new = sigma_y; 
+      sigma_x_new -= sigma_y_new*dt;
+      sigma_y_new += sigma_x_new*dt;
+
+      //update_anim([sigma_x_new, sigma_y_new, sigma_z_0], meas_vec.arraySync());
+      update_anim2([sigma_x_new, sigma_y_new, sigma_z_0]);
+
+      var new_t = t + dt;
+      setTimeout(function() { update_sigmas(sigma_x_new, sigma_y_new, sigma_x_0, sigma_y_0, sigma_z_0, dt, new_t, meas_vec, values)}, 10);
+  }
+}
+
+function stop_hamilton() {
+  run_hamilton_exp = false;
 }

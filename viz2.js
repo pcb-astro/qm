@@ -130,6 +130,7 @@ function update_anim(svec, mvec) {
 
 function update_anim2(pvec) {
     //console.log("point should move to " + pvec);
+    show_circle = true;
     p.point.move({to: xt([pvec[2], pvec[1], pvec[0]], 300), duration:0.05});
 
     p.circle.updateRadius(300.0*Math.sqrt(pvec[0]*pvec[0] + pvec[1]*pvec[1]));

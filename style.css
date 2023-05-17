@@ -56,3 +56,7 @@ body {
     flex-direction: column;
     margin-top: 25px;
 }
+
+#hamilton_exp {
+    margin-top: 10px;
+}
