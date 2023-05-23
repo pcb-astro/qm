@@ -259,6 +259,7 @@ function generate_vis(measure_counts, measure_vec, start_vec, n_times) {
 }
 
 function run_hamilton() {
+
   var mag_vec = tf.tensor1d([0.0, 0.0, 1.0]);
   var meas_vec = get_measure_vec();
 
@@ -280,12 +281,21 @@ function run_hamilton() {
   
   console.log("Start value: " + sigma_x_0 + ", " + sigma_y_0 + ", " + sigma_z_0);
 
-  var dt = 0.05; //0.0001;
+  var dt = Number(document.getElementById("dt_text").value);
+
+  if (dt == null) {
+    dt = 0.05; //0.0001;
+  }
+
   run_hamilton_exp = true;
+  document.getElementById("run_evolution_button").disabled = true;
+
   generate_hamilton_vis(sigma_x_0, sigma_y_0, sigma_x_0, sigma_y_0, sigma_z_0, dt, 0.0, meas_vec, [], []);
 }
 
 function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values) {
+  align_measurement();
+  
   if (values.length > 300) {
     values.shift();
     values.shift();
@@ -336,7 +346,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
                 expr: "max+1"
               },
               domainMin: {
-                "expr": "if(length > 250,max-5,0)"
+                "expr": "if(max > 5,max-5,0)"
               }
             },
              axis: {labelFontSize: 20, titleFontSize: 25, title: "time (seconds)"}
@@ -399,6 +409,10 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
     {"time": t, "average": sigma_x*sigma_x + sigma_y*sigma_y, "type": "experimental"},
     {"time": t, "average": sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0, "type": "theoretical"},
   );
+  
+  var y2_th = sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0;
+  var y2_high = y2_th + dt;
+  var y2_low = y2_th - dt;
 
   var g2_spec = {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
@@ -434,7 +448,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
                   expr: "max+1"
                 },
                 domainMin: {
-                  "expr": "if(length > 250,max-5,0)"
+                  "expr": "if(max > 5,max-5,0)"
                 }
               },
              axis: {labelFontSize: 20, titleFontSize: 25, title: "time (seconds)"}
@@ -442,7 +456,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
            y: {
              field: 'average', 
              type: 'quantitative', 
-             scale: {domain: [0.9, 1.1]},
+             scale: {domain: [y2_low, y2_high]},
              axis: {labelFontSize: 20, titleFontSize: 25, title: "average", }
            },
            color: {
@@ -473,7 +487,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
            y: {
              field: 'average', 
              type: 'quantitative', 
-             scale: {domain: [0.9, 1.1]},
+             scale: {domain: [y2_low, y2_high]},
              axis: {labelFontSize: 20, titleFontSize: 25}
            },
            color: {
@@ -497,7 +511,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
 
 function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res) {
   
-  if (values.length > 300) {
+  if (values.length > 300*0.05/dt) {
     values.shift();
     values.shift();
   }
@@ -506,13 +520,6 @@ function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, 
     {"time": t, "sigma_x,sigma_y": sigma_x, "type": "σx"},
     {"time": t, "sigma_x,sigma_y": sigma_y, "type": "σy"},
   );
-  
-  var t_start = 0;
-  var t_end = t + 1;
-  
-  if (values.length > 250) {
-    t_start = t - 5;
-  }
   
 
 	var g1_change_set = vega
@@ -527,7 +534,7 @@ function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, 
   g1_res.view.change('sx_sy', g1_change_set).run();
   g1_res.view.change('sx_sy_point', g1_change_set_point).run();
 
-  if (avg_values.length > 300) {
+  if (avg_values.length > 300*0.05/dt) {
     avg_values.shift();
     avg_values.shift();
   }
@@ -574,4 +581,5 @@ function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t,
 
 function stop_hamilton() {
   run_hamilton_exp = false;
+  document.getElementById("run_evolution_button").disabled = false;
 }

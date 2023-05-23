@@ -133,9 +133,14 @@ function update_anim2(pvec) {
     show_circle = true;
     p.point.move({to: xt([pvec[2], pvec[1], pvec[0]], 300), duration:0.05});
 
-    p.circle.updateRadius(300.0*Math.sqrt(pvec[0]*pvec[0] + pvec[1]*pvec[1]));
+    var radius = 300.0*Math.sqrt(pvec[0]*pvec[0] + pvec[1]*pvec[1])
+    p.circle.updateRadius(radius);
     var cvec = [0, 0, pvec[2]];
     p.circle.move({to: xt(cvec, 300), duration: 0.005});
+
+    var pointRadius = Math.min(radius, 30);
+    p.point.updateRadius(pointRadius);
+
 }
 
 document.addEventListener("DOMContentLoaded", function(event) { 
