@@ -295,7 +295,7 @@ function run_hamilton() {
 
 function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values) {
   align_measurement();
-  
+
   if (values.length > 300) {
     values.shift();
     values.shift();
@@ -457,7 +457,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
              field: 'average', 
              type: 'quantitative', 
              scale: {domain: [y2_low, y2_high]},
-             axis: {labelFontSize: 20, titleFontSize: 25, title: "average", }
+             axis: {labelFontSize: 20, titleFontSize: 25, title: "σx² + σy²", }
            },
            color: {
              field: 'type',
