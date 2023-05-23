@@ -282,102 +282,283 @@ function run_hamilton() {
 
   var dt = 0.05; //0.0001;
   run_hamilton_exp = true;
-  update_sigmas(sigma_x_0, sigma_y_0, sigma_x_0, sigma_y_0, sigma_z_0, dt, 0.0, meas_vec, []);
+  generate_hamilton_vis(sigma_x_0, sigma_y_0, sigma_x_0, sigma_y_0, sigma_z_0, dt, 0.0, meas_vec, [], []);
 }
 
-function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values) {
+function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values) {
+  if (values.length > 300) {
+    values.shift();
+    values.shift();
+  }
+  
+  values.push(
+    {"time": t, "sigma_x,sigma_y": sigma_x, "type": "σx"},
+    {"time": t, "sigma_x,sigma_y": sigma_y, "type": "σy"},
+  );
+  
+  var t_start = 0;
+  var t_end = t + 1;
+  if (values.length > 250) {
+    t_start = t - 5;
+  }
+
+  var g1_spec = {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 200,
+    height: 200,
+    description: 'Evolution of sigma_x and sigma_y',
+    "params": [
+      {"name": "max", "expr": "data('data_0')[0]['max']"},
+      {"name": "length", "expr": "data('data_0')[0]['length']"}
+    ],
+    layer:[
+      {
+        data: {
+          name: 'sx_sy',
+          values: values
+        },
+        "transform": [
+          {"joinaggregate": [
+            {"op": "max", "field": "time", "as": "max"},
+            {"op": "count", "field": "time", "as": "length"}
+            ]}
+        ],
+        mark: {
+          type: 'line',
+          clip: true
+         },
+         encoding: {
+           x: {
+             field: 'time', 
+             type: 'quantitative',
+             scale: {
+              domainMax: {
+                expr: "max+1"
+              },
+              domainMin: {
+                "expr": "if(length > 250,max-5,0)"
+              }
+            },
+             axis: {labelFontSize: 20, titleFontSize: 25, title: "time (seconds)"}
+           },
+           y: {
+             field: 'sigma_x,sigma_y', 
+             type: 'quantitative', 
+             scale: {domain: [-1, 1]},
+             axis: {labelFontSize: 20, titleFontSize: 25, title: "σx, σy", }
+           },
+           color: {
+             field: 'type',
+             type: 'nominal',
+             legend: {labelFontSize: 20, title:""}
+           }
+         }
+      },
+      {
+        data: {
+          name: 'sx_sy_point',
+          values: values.slice(-2),
+        },
+        mark: {
+          type: 'point',
+          filled: true,
+          size: 100,
+          clip: true
+         },
+         encoding: {
+           x: {
+             field: 'time', 
+             type: 'quantitative',
+             //scale: {domain: [t_start, t_end]},
+             axis: {labelFontSize: 20, titleFontSize: 25}
+           },
+           y: {
+             field: 'sigma_x,sigma_y', 
+             type: 'quantitative', 
+             scale: {domain: [-1, 1]},
+             axis: {labelFontSize: 20, titleFontSize: 25}
+           },
+           color: {
+             field: 'type',
+             type: 'nominal',
+             legend: {labelFontSize: 20, title:""}
+           }
+         }
+      }
+    ]
+    
+  };
+  
+
+  if (avg_values.length > 300) {
+    avg_values.shift();
+    avg_values.shift();
+  }
+  
+  avg_values.push(
+    {"time": t, "average": sigma_x*sigma_x + sigma_y*sigma_y, "type": "experimental"},
+    {"time": t, "average": sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0, "type": "theoretical"},
+  );
+
+  var g2_spec = {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 200,
+    height: 200,
+    description: 'Evolution of average',
+    "params": [
+      {"name": "max", "expr": "data('data_0')[0]['max']"},
+      {"name": "length", "expr": "data('data_0')[0]['length']"}
+    ],
+    layer:[
+      {
+        data: {
+          name: 'avg',
+          values: avg_values
+        },
+        "transform": [
+          {"joinaggregate": [
+            {"op": "max", "field": "time", "as": "max"},
+            {"op": "count", "field": "time", "as": "length"}
+            ]}
+        ],
+        mark: {
+          type: 'line',
+          clip: true
+         },
+         encoding: {
+           x: {
+             field: 'time', 
+             type: 'quantitative',
+             scale: {
+                domainMax: {
+                  expr: "max+1"
+                },
+                domainMin: {
+                  "expr": "if(length > 250,max-5,0)"
+                }
+              },
+             axis: {labelFontSize: 20, titleFontSize: 25, title: "time (seconds)"}
+           },
+           y: {
+             field: 'average', 
+             type: 'quantitative', 
+             scale: {domain: [0.9, 1.1]},
+             axis: {labelFontSize: 20, titleFontSize: 25, title: "average", }
+           },
+           color: {
+             field: 'type',
+             type: 'nominal',
+             legend: {labelFontSize: 20, title:""}
+           }
+         }
+      },
+      {
+        data: {
+          name: 'avg_point',
+          values: avg_values.slice(-2),
+        },
+        mark: {
+          type: 'point',
+          filled: true,
+          size: 100,
+          clip: true
+         },
+         encoding: {
+           x: {
+             field: 'time', 
+             type: 'quantitative',
+             //scale: {domain: [t_start, t_end]},
+             axis: {labelFontSize: 20, titleFontSize: 25}
+           },
+           y: {
+             field: 'average', 
+             type: 'quantitative', 
+             scale: {domain: [0.9, 1.1]},
+             axis: {labelFontSize: 20, titleFontSize: 25}
+           },
+           color: {
+             field: 'type',
+             type: 'nominal',
+             legend: {labelFontSize: 20, title:""}
+           }
+         }
+      }
+    ]
+    
+  };
+
+  vegaEmbed('#g1_vis',g1_spec).then(function (g1_res) {
+    vegaEmbed('#g2_vis', g2_spec).then(function(g2_res) {
+      update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res);
+    });
+  });
+  
+}
+
+function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res) {
+  
+  if (values.length > 300) {
+    values.shift();
+    values.shift();
+  }
+  
+  values.push(
+    {"time": t, "sigma_x,sigma_y": sigma_x, "type": "σx"},
+    {"time": t, "sigma_x,sigma_y": sigma_y, "type": "σy"},
+  );
+  
+  var t_start = 0;
+  var t_end = t + 1;
+  
+  if (values.length > 250) {
+    t_start = t - 5;
+  }
+  
+
+	var g1_change_set = vega
+  .changeset()
+  .remove(function() { return true;})
+  .insert(values);
+  
+  var g1_change_set_point = vega.changeset().remove(
+    function() {return true;}
+  ).insert(values.slice(-2));
+
+  g1_res.view.change('sx_sy', g1_change_set).run();
+  g1_res.view.change('sx_sy_point', g1_change_set_point).run();
+
+  if (avg_values.length > 300) {
+    avg_values.shift();
+    avg_values.shift();
+  }
+  
+  avg_values.push(
+    {"time": t, "average": sigma_x*sigma_x + sigma_y*sigma_y, "type": "experimental"},
+    {"time": t, "average": sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0, "type": "theoretical"},
+  );
+  
+  var g2_change_set = vega
+  .changeset()
+  .remove(function() { return true;})
+  .insert(avg_values);
+  
+  var g2_change_set_point = vega.changeset().remove(
+    function() {return true;}
+  ).insert(avg_values.slice(-2));
+
+  g2_res.view.change('avg', g2_change_set).run();
+  g2_res.view.change('avg_point', g2_change_set_point).run();
+  
+  update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res);
+}
+
+function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res) {
   if (run_hamilton_exp) {
     document.getElementById("sigma_x_exp_value").innerHTML = sigma_x.toFixed(4);
     document.getElementById("sigma_y_exp_value").innerHTML = sigma_y.toFixed(4);
     document.getElementById("sigma_x2_plus_y2_exp_value").innerHTML = (sigma_x*sigma_x + sigma_y*sigma_y).toFixed(4);
     document.getElementById("sigma_x2_plus_y2_th_value").innerHTML = (sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0).toFixed(4);
-
     
-    if (values.length > 300) {
-      values.shift();
-      values.shift();
-    }
-    
-    values.push(
-      {"time": t, "sigma_x,sigma_y": sigma_x, "type": "σx"},
-      {"time": t, "sigma_x,sigma_y": sigma_y, "type": "σy"},
-    );
-    
-    var t_start = 0;
-    var t_end = t + 1;
-    if (values.length > 250) {
-      t_start = t - 5;
-    }
-
-    var g1_spec = {
-      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-      width: 200,
-      height: 200,
-      description: 'Evolution of sigma_x and sigma_y',
-      layer:[
-        {
-          data: {
-            name: 'sx_sy',
-            values: values
-          },
-          mark: {
-            type: 'line',
-            clip: true
-           },
-           encoding: {
-             x: {
-               field: 'time', 
-               type: 'quantitative',
-               scale: {domain: [t_start, t_end]},
-               axis: {labelFontSize: 20, titleFontSize: 25, title: "time (seconds)"}
-             },
-             y: {
-               field: 'sigma_x,sigma_y', 
-               type: 'quantitative', 
-               scale: {domain: [-1, 1]},
-               axis: {labelFontSize: 20, titleFontSize: 25, title: "σx, σy", }
-             },
-             color: {
-               field: 'type',
-               type: 'nominal',
-               legend: {labelFontSize: 20, title:""}
-             }
-           }
-        },
-        {
-          data: {
-            name: 'sx_sy_point',
-            values: values.slice(-2),
-          },
-          mark: {
-            type: 'point',
-            filled: true,
-            size: 100
-           },
-           encoding: {
-             x: {
-               field: 'time', 
-               type: 'quantitative',
-               scale: {domain: [t_start, t_end]},
-               axis: {labelFontSize: 20, titleFontSize: 25}
-             },
-             y: {
-               field: 'sigma_x,sigma_y', 
-               type: 'quantitative', 
-               scale: {domain: [-1, 1]},
-               axis: {labelFontSize: 20, titleFontSize: 25}
-             },
-             color: {
-               field: 'type',
-               type: 'nominal',
-               legend: {labelFontSize: 20, title:""}
-             }
-           }
-        }
-      ]
-      
-    };
-    vegaEmbed('#g1_vis',g1_spec);
 
       var sigma_x_new = sigma_x, sigma_y_new = sigma_y; 
       sigma_x_new -= sigma_y_new*dt;
@@ -387,7 +568,7 @@ function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t,
       update_anim2([sigma_x_new, sigma_y_new, sigma_z_0]);
 
       var new_t = t + dt;
-      setTimeout(function() { update_sigmas(sigma_x_new, sigma_y_new, sigma_x_0, sigma_y_0, sigma_z_0, dt, new_t, meas_vec, values)}, 10);
+      setTimeout(function() { update_hamilton_vis(sigma_x_new, sigma_y_new, sigma_x_0, sigma_y_0, sigma_z_0, dt, new_t, meas_vec, values, avg_values, g1_res, g2_res)}, 50);
   }
 }
 
