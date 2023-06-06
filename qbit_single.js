@@ -307,8 +307,8 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
   }
   
   values.push(
-    {"time": t, "sigma_x,sigma_y": sigma_x, "type": "σx"},
-    {"time": t, "sigma_x,sigma_y": sigma_y, "type": "σy"},
+    {"time": t, "sigma_x,sigma_y": sigma_x, "type": "x"},
+    {"time": t, "sigma_x,sigma_y": sigma_y, "type": "y"},
   );
   
   var t_start = 0;
@@ -361,7 +361,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
              field: 'sigma_x,sigma_y', 
              type: 'quantitative', 
              scale: {domain: [-1, 1]},
-             axis: {labelFontSize: 20, titleFontSize: 25, title: "σx, σy", }
+             axis: {labelFontSize: 20, titleFontSize: 25, title: "x and y components", }
            },
            color: {
              field: 'type',
@@ -527,8 +527,8 @@ function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, 
   }
   
   values.push(
-    {"time": t, "sigma_x,sigma_y": sigma_x, "type": "σx"},
-    {"time": t, "sigma_x,sigma_y": sigma_y, "type": "σy"},
+    {"time": t, "sigma_x,sigma_y": sigma_x, "type": "x"},
+    {"time": t, "sigma_x,sigma_y": sigma_y, "type": "y"},
   );
   
 
