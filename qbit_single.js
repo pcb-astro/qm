@@ -4,7 +4,7 @@ var state_values = [1, -1];
 var init_vec = tf.tensor1d([0.0, 0.0, 1.0]); //pointing in +z direction
 var state_vec = init_vec;
 
-var init_measure_vec = angle_to_unit_vec(0.0, 0.0);
+var init_measure_vec = tf.tensor1d([-1.0, 0.0, 0.0]); //pointing in +x direction, -1 because stange p5 coords
 var measure_vec = init_measure_vec;
 var run_hamilton_exp = false;
 var pi = Math.PI;
@@ -90,7 +90,7 @@ function angle_to_unit_vec(alpha, beta) {
   //because strange p5 coordinate system
   alpha = alpha - degrees_to_radians(90);
 
-	var x = tf.mul(tf.cos(beta), tf.sin(alpha));
+  var x = tf.mul(tf.cos(beta), tf.sin(alpha));
   var x2 = x.dataSync()[0];
   var y = tf.mul(tf.cos(beta), tf.cos(alpha));
   var y2 = y.dataSync()[0];
