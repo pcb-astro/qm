@@ -5,10 +5,17 @@ function xt(v, t) {
 let p;
 var show_circle = false;
 
-function viz_init(svec, mvec) {
+function viz_init(svec, mvec, view3=false, mfvec=null) {
     
-    var s_disp_vec = xt(svec, 310);
+    var smult = 310;
+
+    var s_disp_vec = xt(svec, smult);
     var m_disp_vec = xt(mvec, 300);
+    
+    var mf_disp_vec = s_disp_vec;
+    if(view3) {
+        mf_disp_vec = xt(mfvec, 300);
+    }
     
     const GraphExample = function(s) {
         //let tnr;
@@ -34,6 +41,7 @@ function viz_init(svec, mvec) {
                 model: axes_object,
                 //bgColor: White
             });
+            
 
             s.spin_vec = new Arrow3D(s, {
                 from: [0,0,0],
@@ -41,6 +49,12 @@ function viz_init(svec, mvec) {
                 color: Blue
             });
             
+            s.magnetic_field_vec = new Arrow3D(s, {
+                from:[0,0,0],
+                to: mf_disp_vec,
+                color: Green
+            });
+
             s.measure_vec = new Arrow3D(s, {
                 from: [0,0,0],
                 to: m_disp_vec,
@@ -52,7 +66,7 @@ function viz_init(svec, mvec) {
                 y: 0.0,
                 z: 0.0,
                 radius: 30,
-                color: [169, 169, 169]
+                color: [75,125,178]
             });
             
             s.circle = new Circle3D(s, {
@@ -82,6 +96,20 @@ function viz_init(svec, mvec) {
             s.measure_legend_text = new Text(s, { 
                 str: "Measurement Direction", mode: 1, x: 500, y: 75, size: 25 
             });
+            s.mag_field_legend_marker = new Arrow(s, {
+                y1: 90, y2: 60, x1: 360, x2: 360, strokeweight: 3,
+                color: Green
+            });
+            s.mag_field_legend_text = new Text(s, { 
+                str: "Magnetic field Direction", mode: 1, x: 500, y: 75, size: 25 
+            });
+            s.spin_avg_legend_marker = new Point(s, {
+                x: 450, y: 125, radius:30,
+                color: Blue
+            });
+            s.spin_avg_legend_text = new Text(s, { 
+                str: "Spin (average)", mode: 1, x: 550, y: 125, size: 25 
+            });
             //s.arrs = new Arrows_Transform(s, {
             //    time: time, start: time.three_to_two, showBasis: true, //showX: true,
             //});
@@ -100,9 +128,16 @@ function viz_init(svec, mvec) {
             s.background(0);
             s.a.show(g3);  // Manim.js classes usually define a show() function to be called in draw()
             //s.grid.showGrid();
-            s.spin_vec.show(g3);
-            s.measure_vec.show(g3);
             
+            if(view3) {
+                s.magnetic_field_vec.show(g3);
+            }
+            else {
+                s.measure_vec.show(g3);
+            }
+
+            s.spin_vec.show(g3);
+          
             if (show_circle) {
                 s.circle.show(g3);
                 s.point.show(g3);
@@ -110,8 +145,18 @@ function viz_init(svec, mvec) {
             
             s.spin_legend_marker.show();
             s.spin_legend_text.show();
-            s.measure_legend_marker.show();
-            s.measure_legend_text.show();
+            
+
+            if(view3) {
+               s.mag_field_legend_marker.show();
+               s.mag_field_legend_text.show();
+               s.spin_avg_legend_marker.show();
+               s.spin_avg_legend_text.show(); 
+            }
+            else{
+               s.measure_legend_marker.show();
+               s.measure_legend_text.show();
+            }
             s.image(g3, -100, 37, 640, 480);
         };
     };
@@ -133,6 +178,8 @@ function update_anim2(pvec) {
     show_circle = true;
     p.point.move({to: xt([pvec[2], pvec[1], pvec[0]], 300), duration:0.05});
 
+    //p.spin_vec.move({to: xt([-pvec[0], pvec[1], pvec[2]], 300), duration:0.05});
+
     var radius = 300.0*Math.sqrt(pvec[0]*pvec[0] + pvec[1]*pvec[1])
     p.circle.updateRadius(radius);
     var cvec = [0, 0, pvec[2]];
@@ -143,9 +190,10 @@ function update_anim2(pvec) {
 
 }
 
+/*
 document.addEventListener("DOMContentLoaded", function(event) { 
     console.log(state_vec.arraySync(), measure_vec.arraySync());
     viz_init(state_vec.arraySync(), measure_vec.arraySync());
     //viz_init2(state_vec.arraySync(), measure_vec.arraySync());
   });
-
+*/

@@ -7,11 +7,14 @@ var state_vec = init_vec;
 var init_measure_vec = angle_to_unit_vec(0.0, 0.0);
 var measure_vec = init_measure_vec;
 var run_hamilton_exp = false;
+var pi = Math.PI;
 
+/*
 document.addEventListener("DOMContentLoaded", function(event) { 
   update_state(state_vec, null);
   update_measurement(null, measure_vec);
 });
+*/
 
 function update_measurement(measurement_idx, measure_vec) {
   if(measure_vec != null) { 
@@ -79,7 +82,6 @@ function align_measurement(){
 //Ref - https://www.w3resource.com/javascript-exercises/javascript-math-exercise-33.php
 function degrees_to_radians(degrees)
 {
-  var pi = Math.PI;
   return degrees * (pi/180.0);
 }
 
@@ -275,6 +277,8 @@ function run_hamilton() {
   
   console.log(sigma_x, sigma_y, sigma_z);
 
+  console.log("th dot " + tf.dot(mag_vec, meas_vec).dataSync()[0]);
+
   var sigma_x_0 = sigma_x;
   var sigma_y_0 = sigma_y;
   var sigma_z_0 = sigma_z;
@@ -294,6 +298,7 @@ function run_hamilton() {
 }
 
 function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values) {
+  update_state(meas_vec, null);
   align_measurement();
 
   if (values.length > 300) {
@@ -335,7 +340,8 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
         ],
         mark: {
           type: 'line',
-          clip: true
+          clip: true,
+          tooltip: true
          },
          encoding: {
            x: {
@@ -405,12 +411,15 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
     avg_values.shift();
   }
   
+  var r_exp = Math.sqrt(sigma_x*sigma_x + sigma_y*sigma_y);
+  var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
+
   avg_values.push(
-    {"time": t, "average": sigma_x*sigma_x + sigma_y*sigma_y, "type": "experimental"},
-    {"time": t, "average": sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0, "type": "theoretical"},
+    {"time": t, "average": r_exp, "type": "experimental"},
+    {"time": t, "average": r_th, "type": "theoretical"},
   );
   
-  var y2_th = sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0;
+  var y2_th = r_th;
   var y2_high = y2_th + dt;
   var y2_low = y2_th - dt;
 
@@ -437,7 +446,8 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
         ],
         mark: {
           type: 'line',
-          clip: true
+          clip: true,
+          tooltip: true
          },
          encoding: {
            x: {
@@ -457,7 +467,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
              field: 'average', 
              type: 'quantitative', 
              scale: {domain: [y2_low, y2_high]},
-             axis: {labelFontSize: 20, titleFontSize: 25, title: "σx² + σy²", }
+             axis: {labelFontSize: 20, titleFontSize: 25, title: "radius", }
            },
            color: {
              field: 'type',
@@ -539,9 +549,12 @@ function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, 
     avg_values.shift();
   }
   
+  var r_exp = Math.sqrt(sigma_x*sigma_x + sigma_y*sigma_y);
+  var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
+
   avg_values.push(
-    {"time": t, "average": sigma_x*sigma_x + sigma_y*sigma_y, "type": "experimental"},
-    {"time": t, "average": sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0, "type": "theoretical"},
+    {"time": t, "average": r_exp, "type": "experimental"},
+    {"time": t, "average": r_th, "type": "theoretical"},
   );
   
   var g2_change_set = vega
@@ -560,11 +573,14 @@ function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, 
 }
 
 function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res) {
+  var r_exp = Math.sqrt(sigma_x*sigma_x + sigma_y*sigma_y);
+  var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
+
   if (run_hamilton_exp) {
     document.getElementById("sigma_x_exp_value").innerHTML = sigma_x.toFixed(4);
     document.getElementById("sigma_y_exp_value").innerHTML = sigma_y.toFixed(4);
-    document.getElementById("sigma_x2_plus_y2_exp_value").innerHTML = (sigma_x*sigma_x + sigma_y*sigma_y).toFixed(4);
-    document.getElementById("sigma_x2_plus_y2_th_value").innerHTML = (sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0).toFixed(4);
+    document.getElementById("sigma_x2_plus_y2_exp_value").innerHTML = (r_exp).toFixed(4);
+    document.getElementById("sigma_x2_plus_y2_th_value").innerHTML = (r_th).toFixed(4);
     
 
       var sigma_x_new = sigma_x, sigma_y_new = sigma_y; 
