@@ -9,6 +9,10 @@ var measure_vec = init_measure_vec;
 var run_hamilton_exp = false;
 var pi = Math.PI;
 
+//storing angles for use later on
+let alpha;
+let beta;
+
 /*
 document.addEventListener("DOMContentLoaded", function(event) { 
   update_state(state_vec, null);
@@ -103,10 +107,6 @@ function angle_to_unit_vec(alpha, beta) {
   return t
 }
 
-function unit_vec_to_angle(vec) {
-
-}
-
 function measure(state_vec, measure_vec) {
   //console.log("state = " + state_vec + " measure = " + measure_vec);
 	var expected_value = tf.dot(state_vec, measure_vec).dataSync()[0];
@@ -125,8 +125,8 @@ function get_measure_vec() {
   var beta_deg = Number(document.getElementById("beta_text").value);
   
 
-  var alpha = degrees_to_radians(alpha_deg);
-  var beta = degrees_to_radians(beta_deg);
+  alpha = degrees_to_radians(alpha_deg);
+  beta = degrees_to_radians(beta_deg);
   
   var measure_vec = angle_to_unit_vec(alpha, beta);
   
@@ -269,10 +269,17 @@ function run_hamilton() {
   var y_dir = tf.tensor1d([0.0, 1.0, 0.0]);
   var x_dir = tf.tensor1d([1.0, 0.0, 0.0]);
   
+  //the fluctuation happens around this value where either the x or y component is zero
+  //use this as theoretical prediction (cheeky, I know)
+  //using y component because we measure angles x-y and y-z, x component will require x-z angle
+  var yz_spin_vec = angle_to_unit_vec(pi/2.0, beta);
+  var r_th = tf.dot(yz_spin_vec, y_dir).dataSync()[0];
+  console.log("r_th: " + r_th);
+
   console.log(tf.dot(meas_vec, x_dir).dataSync()[0]);
   console.log(x_dir.mul(tf.dot(meas_vec, x_dir).dataSync()[0]).arraySync());
-  var sigma_x = tf.dot(meas_vec, x_dir).dataSync()[0];
-  var sigma_y = tf.dot(meas_vec, y_dir).dataSync()[0];
+  var sigma_x = r_th; //tf.dot(meas_vec, x_dir).dataSync()[0];
+  var sigma_y = 0; //tf.dot(meas_vec, y_dir).dataSync()[0];
   var sigma_z = tf.dot(meas_vec, z_dir).dataSync()[0];
   
   console.log(sigma_x, sigma_y, sigma_z);
@@ -294,10 +301,10 @@ function run_hamilton() {
   run_hamilton_exp = true;
   document.getElementById("run_evolution_button").disabled = true;
 
-  generate_hamilton_vis(sigma_x_0, sigma_y_0, sigma_x_0, sigma_y_0, sigma_z_0, dt, 0.0, meas_vec, [], []);
+  generate_hamilton_vis(sigma_x_0, sigma_y_0, sigma_x_0, sigma_y_0, sigma_z_0, r_th, dt, 0.0, meas_vec, [], []);
 }
 
-function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values) {
+function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, r_th, dt, t, meas_vec, values, avg_values) {
   update_state(meas_vec, null);
   align_measurement();
 
@@ -412,7 +419,7 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
   }
   
   var r_exp = Math.sqrt(sigma_x*sigma_x + sigma_y*sigma_y);
-  var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
+  //var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
 
   avg_values.push(
     {"time": t, "average": r_exp, "type": "experimental"},
@@ -513,13 +520,13 @@ function generate_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0
 
   vegaEmbed('#g1_vis',g1_spec).then(function (g1_res) {
     vegaEmbed('#g2_vis', g2_spec).then(function(g2_res) {
-      update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res);
+      update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, r_th, dt, t, meas_vec, values, avg_values, g1_res, g2_res);
     });
   });
   
 }
 
-function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res) {
+function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, r_th, dt, t, meas_vec, values, avg_values, g1_res, g2_res) {
   
   if (values.length > 300*0.05/dt) {
     values.shift();
@@ -550,7 +557,7 @@ function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, 
   }
   
   var r_exp = Math.sqrt(sigma_x*sigma_x + sigma_y*sigma_y);
-  var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
+  //var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
 
   avg_values.push(
     {"time": t, "average": r_exp, "type": "experimental"},
@@ -569,19 +576,20 @@ function update_hamilton_vis(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, 
   g2_res.view.change('avg', g2_change_set).run();
   g2_res.view.change('avg_point', g2_change_set_point).run();
   
-  update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res);
+  update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, r_th, dt, t, meas_vec, values, avg_values, g1_res, g2_res);
 }
 
-function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t, meas_vec, values, avg_values, g1_res, g2_res) {
+function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, r_th, dt, t, meas_vec, values, avg_values, g1_res, g2_res) {
   var r_exp = Math.sqrt(sigma_x*sigma_x + sigma_y*sigma_y);
-  var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
+  //var r_th = Math.sqrt(sigma_x_0*sigma_x_0 + sigma_y_0*sigma_y_0);
+  var r_unit = Math.sqrt(sigma_x*sigma_x + sigma_y*sigma_y + sigma_z_0*sigma_z_0);
 
   if (run_hamilton_exp) {
     document.getElementById("sigma_x_exp_value").innerHTML = sigma_x.toFixed(4);
     document.getElementById("sigma_y_exp_value").innerHTML = sigma_y.toFixed(4);
     document.getElementById("sigma_x2_plus_y2_exp_value").innerHTML = (r_exp).toFixed(4);
     document.getElementById("sigma_x2_plus_y2_th_value").innerHTML = (r_th).toFixed(4);
-    
+    document.getElementById("unit_r").innerHTML = (r_unit).toFixed(4);
 
       var sigma_x_new = sigma_x, sigma_y_new = sigma_y; 
       sigma_x_new -= sigma_y_new*dt;
@@ -591,7 +599,7 @@ function update_sigmas(sigma_x, sigma_y, sigma_x_0, sigma_y_0, sigma_z_0, dt, t,
       update_anim2([sigma_x_new, sigma_y_new, sigma_z_0]);
 
       var new_t = t + dt;
-      setTimeout(function() { update_hamilton_vis(sigma_x_new, sigma_y_new, sigma_x_0, sigma_y_0, sigma_z_0, dt, new_t, meas_vec, values, avg_values, g1_res, g2_res)}, 50);
+      setTimeout(function() { update_hamilton_vis(sigma_x_new, sigma_y_new, sigma_x_0, sigma_y_0, sigma_z_0, r_th, dt, new_t, meas_vec, values, avg_values, g1_res, g2_res)}, 50);
   }
 }
 
